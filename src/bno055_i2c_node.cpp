@@ -133,9 +133,7 @@ void BNO055I2CNode::run()
     ros::spinOnce();
     rate->sleep();
     if (readAndPublish())
-    {
       watchdog.refresh();
-    }
   }
 }
 
@@ -207,12 +205,12 @@ bool BNO055I2CNode::readAndPublish()
 
   if ((seq++) % 50 == 0)
   {
-    current_status.values[DIAG_CALIB_STAT].value = std::to_string(record.calibration_status);
-    current_status.values[DIAG_SELFTEST_RESULT].value = std::to_string(record.self_test_result);
-    current_status.values[DIAG_INTR_STAT].value = std::to_string(record.interrupt_status);
-    current_status.values[DIAG_SYS_CLK_STAT].value = std::to_string(record.system_clock_status);
-    current_status.values[DIAG_SYS_STAT].value = std::to_string(record.system_status);
-    current_status.values[DIAG_SYS_ERR].value = std::to_string(record.system_error_code);
+    current_status.values[0].value = std::to_string(record.calibration_status);
+    current_status.values[1].value = std::to_string(record.self_test_result);
+    current_status.values[2].value = std::to_string(record.interrupt_status);
+    current_status.values[3].value = std::to_string(record.system_clock_status);
+    current_status.values[4].value = std::to_string(record.system_status);
+    current_status.values[5].value = std::to_string(record.system_error_code);
     pub_status.publish(current_status);
   }
 
@@ -221,7 +219,7 @@ bool BNO055I2CNode::readAndPublish()
 
 void BNO055I2CNode::stop()
 {
-  ROS_INFO("stopping");
+  ROS_INFO("Stopping");
   if (pub_data)
     pub_data.shutdown();
   if (pub_raw)
@@ -242,8 +240,8 @@ bool BNO055I2CNode::onSrvReset(std_srvs::Trigger::Request& req, std_srvs::Trigge
 
   try
   {
-    ROS_INFO("Attempting to reset IMU...");
-    if (!(imu->reset()))
+    ROS_DEBUG("Attempting to reset IMU...");
+    if (!imu->reset())
     {
       ROS_ERROR("IMU reset failed");
       res.success = false;
@@ -263,7 +261,7 @@ bool BNO055I2CNode::onSrvReset(std_srvs::Trigger::Request& req, std_srvs::Trigge
   res.success = true;
   res.message = "IMU reset succeeded";
 
-  ROS_INFO("Returning response: success=%s, message=%s", res.success ? "true" : "false", res.message.c_str());
+  ROS_DEBUG("Returning response: success=%s, message=%s", res.success ? "true" : "false", res.message.c_str());
   return true;
 }
 
