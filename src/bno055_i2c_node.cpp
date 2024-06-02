@@ -130,6 +130,7 @@ void BNO055I2CNode::run()
 {
   while (ros::ok())
   {
+    ros::spinOnce();
     rate->sleep();
     if (readAndPublish())
     {
