@@ -18,16 +18,24 @@ bool BNO055I2CDriver::reset()
   int i = 0;
 
   ROS_INFO("Setting operation mode to CONFIG");
-  _i2c_smbus_write_byte_data(file, BNO055_OPR_MODE_ADDR, BNO055_OPERATION_MODE_CONFIG);
+  int result = _i2c_smbus_write_byte_data(file, BNO055_OPR_MODE_ADDR, BNO055_OPERATION_MODE_CONFIG);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to set operation mode to CONFIG");
+    return false;
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
   ROS_INFO("Sending reset command to IMU");
-  // reset
-  _i2c_smbus_write_byte_data(file, BNO055_SYS_TRIGGER_ADDR, 0x20);
+  result = _i2c_smbus_write_byte_data(file, BNO055_SYS_TRIGGER_ADDR, 0x20);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to send reset command to IMU");
+    return false;
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
   ROS_INFO("Waiting for IMU to come back online");
-  // wait for chip to come back online
   while (_i2c_smbus_read_byte_data(file, BNO055_CHIP_ID_ADDR) != BNO055_ID)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -41,17 +49,36 @@ bool BNO055I2CDriver::reset()
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   ROS_INFO("Setting normal power mode");
-  // normal power mode
-  _i2c_smbus_write_byte_data(file, BNO055_PWR_MODE_ADDR, BNO055_POWER_MODE_NORMAL);
+  result = _i2c_smbus_write_byte_data(file, BNO055_PWR_MODE_ADDR, BNO055_POWER_MODE_NORMAL);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to set normal power mode");
+    return false;
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   ROS_INFO("Setting page ID to 0");
-  _i2c_smbus_write_byte_data(file, BNO055_PAGE_ID_ADDR, 0);
-  _i2c_smbus_write_byte_data(file, BNO055_SYS_TRIGGER_ADDR, 0);
+  result = _i2c_smbus_write_byte_data(file, BNO055_PAGE_ID_ADDR, 0);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to set page ID to 0");
+    return false;
+  }
+  result = _i2c_smbus_write_byte_data(file, BNO055_SYS_TRIGGER_ADDR, 0);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to clear SYS_TRIGGER");
+    return false;
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
   ROS_INFO("Setting operation mode to NDOF");
-  _i2c_smbus_write_byte_data(file, BNO055_OPR_MODE_ADDR, BNO055_OPERATION_MODE_NDOF);
+  result = _i2c_smbus_write_byte_data(file, BNO055_OPR_MODE_ADDR, BNO055_OPERATION_MODE_NDOF);
+  if (result < 0)
+  {
+    ROS_ERROR("Failed to set operation mode to NDOF");
+    return false;
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
   ROS_INFO("IMU reset completed successfully");
@@ -61,6 +88,10 @@ bool BNO055I2CDriver::reset()
 void BNO055I2CDriver::init()
 {
   file = open(device.c_str(), O_RDWR);
+  if (file < 0)
+  {
+    throw std::runtime_error("i2c device open failed");
+  }
 
   if (ioctl(file, I2C_SLAVE, address) < 0)
   {
